@@ -10,6 +10,7 @@ asks for your approval, runs it, and explains the results.
 - Only uses sudo when required by Nmap
 - Input validation to prevent command injection
 - AI powered analysis of scan results
+- Converastion history between messages
 
 ## Requirements
 - Python 3.x
