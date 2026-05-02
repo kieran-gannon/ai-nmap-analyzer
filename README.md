@@ -23,6 +23,9 @@ asks for your approval, runs it, and explains the results.
 4. Install dependencies: `pip install -r requirements.txt`
 
 ## Example
+
+<img width="730" height="652" alt="Screenshot 2026-05-02 at 4 29 24 PM" src="https://github.com/user-attachments/assets/610921fa-ffc2-49d9-94a7-fb75306a6907" />
+
 Enter the target IP or hostname to scan: scanme.nmap.org
 Enter your question: what OS is the server running?
 Run command: nmap -O scanme.nmap.org
