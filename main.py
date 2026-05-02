@@ -12,6 +12,7 @@ from rich.panel import Panel
 from rich.markdown import Markdown
 from rich import print
 import re
+import shlex
 
 # create a console object
 console = Console()
@@ -19,7 +20,8 @@ console = Console()
 # main function to run the application 
 def main():
     console.print(Panel("[bold green]AI Nmap Analyzer[/bold green]", subtitle="Powered by Ollama"))
-    
+    conversation_history = []
+
     # Prompt user for target IP or hostname
     while True:
         target = input("Enter the target IP or hostname to scan: ")
@@ -40,23 +42,28 @@ def main():
                 console.print("[bold red]Invalid target. Please enter a valid IP or hostname.[/bold red]")
             continue
 
-        command = get_command_from_llm(prompt, target)
-        run_nmap_command(prompt, command, target)
+        command = get_command_from_llm(prompt, target, conversation_history)
+        run_nmap_command(prompt, command, target, conversation_history)
 
 # Function to get nmap command from the language model based on user prompt and target
-def get_command_from_llm(prompt, target):
+def get_command_from_llm(prompt, target, conversation_history):
+    conversation_history.append({"role": "user", "content": prompt})
+    
     response = ollama.chat(model="gemma4:e4b", messages=[
         {"role": "system", "content": (
             f"You are an expert cybersecurity analyst with access to only Nmap on macOS. "
             f"Only respond with the exact nmap command needed to answer the question about {target}. "
             "No explanation. No markdown. Just the raw command."
         )},
-        {"role": "user", "content": prompt}
+        *conversation_history
     ])
-    return response['message']['content']
+    
+    command = response['message']['content']
+    conversation_history.append({"role": "assistant", "content": command})
+    return command
 
 # Function to run the nmap command and analyze the output with the language model
-def run_nmap_command(prompt, command, target):
+def run_nmap_command(prompt, command, target, conversation_history):
     console.print(f"[bold blue]Run command:[/bold blue] {command}")
 
     if not command.strip().startswith("nmap"):
@@ -68,9 +75,9 @@ def run_nmap_command(prompt, command, target):
     if run.lower() == "y":
         needs_sudo = "-O" in command or "-A" in command or "-sS" in command
         if needs_sudo:
-            cmd = ["sudo"] + command.split()
+            cmd = ["sudo"] + shlex.split(command)
         else:
-            cmd = command.split()
+            cmd = shlex.split(command)
 
         result = subprocess.run(cmd, capture_output=True, text=True)
         analysis = analyze_nmap_output(prompt, command, result.stdout)
